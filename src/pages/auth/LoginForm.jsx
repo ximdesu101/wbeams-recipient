@@ -34,7 +34,7 @@ import LoginImage from "@/assets/LoginImage.png";
 import { Link } from "react-router-dom";
 import { LoginSchema } from "@/schemas/authSchema";
 import { zodFieldValidator } from "@/lib/validators";
-import { RecipientLogin } from "@/services/AuthService";
+import { RecipientLogin } from "@/services/authService";
 import ForgotPassword from "./ForgotPassword";
 
 const LoginForm = ({ className, ...props }) => {

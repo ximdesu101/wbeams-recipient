@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { useSSE } from "./useSSE";
+import { useSSE } from "./useSse";
 
 const RECIPIENT_CHANNEL_QUERY_KEYS = {
     "recipient-alerts": [
