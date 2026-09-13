@@ -25,10 +25,4 @@ export const markAllAlertsRead = async () => {
     return response.data;
 };
 
-export const submitAlertFeedback = async ({ alertId, rating, comment }) => {
-    const response = await api.post(`/recipient/alerts/${alertId}/feedback`, {
-        rating,
-        comment,
-    });
-    return response.data;
-};
+export { submitAlertFeedback, getAlertFeedback } from "./feedbackService";

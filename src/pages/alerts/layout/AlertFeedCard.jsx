@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { CircleCheckBig, Mail, MonitorSmartphone, ThumbsDown, ThumbsUp } from "lucide-react";
 import {
@@ -22,10 +22,11 @@ import {
 import { Field, FieldContent, FieldTitle, FieldLabel } from "@/components/ui/field";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
-import { submitAlertFeedback } from "@/services/alertService";
+import { submitAlertFeedback, getAlertFeedback } from "@/services/alertService";
 import { SEVERITY_VARIANT, timeAgo } from "@/lib/helper";
 
 const AlertFeedCard = ({ alert }) => {
+    const queryClient = useQueryClient();
     const [popoverOpen, setPopoverOpen] = useState(false);
     const [feedback, setFeedback] = useState("");
     const [comment, setComment] = useState("");
@@ -35,17 +36,36 @@ const AlertFeedCard = ({ alert }) => {
         : "Unknown";
     const refNumber = `OPR-${String(alert.operator?.id ?? 0).padStart(5, "0")}`;
 
+    const { data: existingFeedback } = useQuery({
+        queryKey: ["alertFeedback", alert.id],
+        queryFn: () => getAlertFeedback(alert.id),
+        staleTime: 30_000,
+    });
+
+    // Prefill form when opening the popover or when existing data loads
+    useEffect(() => {
+        if (existingFeedback) {
+            setFeedback(existingFeedback.rating || "");
+            setComment(existingFeedback.comment || "");
+        }
+    }, [existingFeedback]);
+
     const feedbackMutation = useMutation({
         mutationFn: ({ rating, comment }) =>
             submitAlertFeedback({ alertId: alert.id, rating, comment }),
-        onSuccess: () => {
-            toast.success("Feedback submitted. Thank you!");
+        onSuccess: (data) => {
+            queryClient.setQueryData(["alertFeedback", alert.id], data);
+            toast.success(
+                existingFeedback
+                    ? "Feedback updated. Thank you!"
+                    : "Feedback submitted. Thank you!"
+            );
             setPopoverOpen(false);
-            setFeedback("");
-            setComment("");
         },
-        onError: () => {
-            toast.error("Failed to submit feedback. Please try again.");
+        onError: (err) => {
+            toast.error(
+                err?.message || "Failed to submit feedback. Please try again."
+            );
         },
     });
 
@@ -56,6 +76,20 @@ const AlertFeedCard = ({ alert }) => {
         }
         feedbackMutation.mutate({ rating: feedback, comment });
     };
+
+    const handlePopoverOpenChange = (open) => {
+        setPopoverOpen(open);
+        if (open && existingFeedback) {
+            setFeedback(existingFeedback.rating || "");
+            setComment(existingFeedback.comment || "");
+        } else if (open && !existingFeedback) {
+            setFeedback("");
+            setComment("");
+        }
+    };
+
+    const hasFeedback = Boolean(existingFeedback);
+    const isHelpful = existingFeedback?.rating === "like";
 
     return (
         <Card>
@@ -111,9 +145,22 @@ const AlertFeedCard = ({ alert }) => {
 
             <CardContent className="flex justify-between">
                 <CardAction>
-                    <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+                    <Popover open={popoverOpen} onOpenChange={handlePopoverOpenChange}>
                         <PopoverTrigger asChild>
-                            <Button variant="outline">Leave feedback</Button>
+                            <Button variant="outline">
+                                {hasFeedback ? (
+                                    <span className="flex items-center gap-1.5">
+                                        {isHelpful ? (
+                                            <ThumbsUp className="h-4 w-4 text-green-600" />
+                                        ) : (
+                                            <ThumbsDown className="h-4 w-4 text-red-600" />
+                                        )}
+                                        Edit feedback
+                                    </span>
+                                ) : (
+                                    "Leave feedback"
+                                )}
+                            </Button>
                         </PopoverTrigger>
                         <PopoverContent align="start" className="w-72">
                             <PopoverHeader>
@@ -179,7 +226,11 @@ const AlertFeedCard = ({ alert }) => {
                                 onClick={handleFeedbackSubmit}
                                 disabled={feedbackMutation.isPending}
                             >
-                                {feedbackMutation.isPending ? "Submitting..." : "Submit feedback"}
+                                {feedbackMutation.isPending
+                                    ? "Submitting..."
+                                    : hasFeedback
+                                        ? "Update feedback"
+                                        : "Submit feedback"}
                             </Button>
                         </PopoverContent>
                     </Popover>
