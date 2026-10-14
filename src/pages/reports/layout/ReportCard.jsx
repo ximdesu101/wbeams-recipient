@@ -119,8 +119,10 @@ const ReportCard = ({ report, onDelete, isDeleting = false }) => {
         <>
             <Card>
                 <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                        <CardTitle>{report.title}</CardTitle>
+                    <div className="min-w-0 flex-1">
+                        <CardTitle className="break-words [overflow-wrap:anywhere]">
+                            {report.title}
+                        </CardTitle>
                         <CardDescription>
                             {report.location} •{" "}
                             {new Date(report.created_at).toLocaleString()}
@@ -204,13 +206,15 @@ const ReportCard = ({ report, onDelete, isDeleting = false }) => {
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Delete this report?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This will permanently remove{" "}
-                            <span className="font-medium text-foreground">
+                        <AlertDialogDescription className="w-full min-w-0">
+                            <span className="block w-full truncate font-medium text-foreground">
                                 {report.title}
-                            </span>{" "}
-                            and any attached video or voice files. This action
-                            cannot be undone.
+                            </span>
+                            <span>
+                                This report and any attached video or voice files
+                                will be permanently removed. This action cannot
+                                be undone.
+                            </span>
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

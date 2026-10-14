@@ -35,6 +35,14 @@ import {
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 
 import { reportSchema } from "@/schemas/reportSchema";
 import { zodFieldValidator } from "@/lib/validators";
@@ -46,7 +54,7 @@ import {
     MediaFooterActions,
     MediaPanel,
 } from "./MediaAttachments";
-import { Send } from "lucide-react";
+import { CheckCircle2, Loader2, Send } from "lucide-react";
 
 const locations = LOCATION_NAMES;
 
@@ -57,6 +65,7 @@ const initialMediaState = {
 
 const SendReport = () => {
     const [isLocating, setIsLocating] = useState(false);
+    const [submissionDialogOpen, setSubmissionDialogOpen] = useState(false);
     const [media, setMedia] = useState(initialMediaState);
     const queryClient = useQueryClient();
 
@@ -145,9 +154,13 @@ const SendReport = () => {
                 return;
             }
 
+            submitMutation.reset();
+            setSubmissionDialogOpen(true);
             setIsLocating(true);
+            let reportSubmissionStarted = false;
             try {
                 const coords = await getSenderCoordinates();
+                setIsLocating(false);
 
                 // Attach recorded media (Blob/File) if present
                 const payload = {
@@ -178,9 +191,11 @@ const SendReport = () => {
                               );
                 }
 
+                reportSubmissionStarted = true;
                 await submitMutation.mutateAsync(payload);
             } catch (error) {
-                if (!error?.response) {
+                setSubmissionDialogOpen(false);
+                if (!reportSubmissionStarted) {
                     toast.error(
                         error?.message ||
                         "Unable to get your location. Please allow location access and try again."
@@ -232,6 +247,12 @@ const SendReport = () => {
 
     const isBusy = isLocating || submitMutation.isPending;
 
+    const handleSubmissionDialogChange = (nextOpen) => {
+        if (isBusy) return;
+        setSubmissionDialogOpen(nextOpen);
+        if (!nextOpen) submitMutation.reset();
+    };
+
     return (
         <Card>
             <CardHeader>
@@ -246,7 +267,9 @@ const SendReport = () => {
                     <form.Field
                         name="location"
                         validators={{
+                            onChange: zodFieldValidator(reportSchema.shape.location),
                             onBlur: zodFieldValidator(reportSchema.shape.location),
+                            onSubmit: zodFieldValidator(reportSchema.shape.location),
                         }}
                     >
                         {(field) => (
@@ -287,7 +310,9 @@ const SendReport = () => {
                     <form.Field
                         name="title"
                         validators={{
+                            onChange: zodFieldValidator(reportSchema.shape.title),
                             onBlur: zodFieldValidator(reportSchema.shape.title),
+                            onSubmit: zodFieldValidator(reportSchema.shape.title),
                         }}
                     >
                         {(field) => (
@@ -401,6 +426,58 @@ const SendReport = () => {
                     onRecordVoice={() => startRecording("record-voice")}
                 />
             </CardFooter>
+            <Dialog
+                open={submissionDialogOpen}
+                onOpenChange={handleSubmissionDialogChange}
+            >
+                <DialogContent
+                    className="sm:max-w-md"
+                    onEscapeKeyDown={(event) => {
+                        if (isBusy) event.preventDefault();
+                    }}
+                    onPointerDownOutside={(event) => {
+                        if (isBusy) event.preventDefault();
+                    }}
+                >
+                    {isBusy ? (
+                        <DialogHeader className="items-center space-y-4 py-6 text-center">
+                            <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-primary/10">
+                                <Loader2 className="size-8 animate-spin text-primary" />
+                            </div>
+                            <DialogTitle className="text-xl">
+                                {isLocating ? "Getting your location…" : "Sending report…"}
+                            </DialogTitle>
+                            <DialogDescription className="text-base">
+                                {isLocating
+                                    ? "Please wait while we get your location to include with the report."
+                                    : "Please wait while your report is sent to the operator."}
+                            </DialogDescription>
+                        </DialogHeader>
+                    ) : submitMutation.isSuccess ? (
+                        <>
+                            <DialogHeader className="items-center text-center">
+                                <div className="mx-auto mb-3 flex size-14 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/40">
+                                    <CheckCircle2 className="size-8 text-emerald-600 dark:text-emerald-400" />
+                                </div>
+                                <DialogTitle className="text-xl">
+                                    Report sent successfully
+                                </DialogTitle>
+                                <DialogDescription className="text-base">
+                                    Your report has been sent to the operator.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <DialogFooter className="sm:justify-center">
+                                <Button
+                                    onClick={() => handleSubmissionDialogChange(false)}
+                                    className="w-full sm:w-auto"
+                                >
+                                    Got it
+                                </Button>
+                            </DialogFooter>
+                        </>
+                    ) : null}
+                </DialogContent>
+            </Dialog>
         </Card>
     );
 };
