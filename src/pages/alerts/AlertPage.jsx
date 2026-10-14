@@ -4,13 +4,15 @@ import {
     CardDescription,
     CardTitle,
 } from "@/components/ui/card";
-import { getRecipientAlerts } from "@/services/alertService";
+import useDocumentTitle from "@/hooks/useDocumentTitle";
 import Metrics from "./layout/Metrics";
 import AlertFeedCard from "./layout/AlertFeedCard";
 import AlertSkeleton from "./layout/AlertSkeleton";
 import EmptyAlerts from "./layout/EmptyAlerts";
+import { getRecipientAlerts } from "@/services/alertService";
 
 const AlertPage = () => {
+    useDocumentTitle("NwSSU Alerts | Alerts")
     const {
         data,
         isLoading,

@@ -1,11 +1,19 @@
+import useDocumentTitle from "@/hooks/useDocumentTitle";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, PlayCircle, ShieldCheck, Radio, Activity } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { IconSphere } from "@/components/styles/background/IconSphere";
 import { Tiles } from "@/components/styles/background/tiles";
-import { Button } from "@/components/ui/button";
+import { 
+    ArrowRight, 
+    PlayCircle, 
+    ShieldCheck, 
+    Radio, 
+    Activity 
+} from "lucide-react";
 
 function Hero({ className, ...props }) {
+    useDocumentTitle("NwSSU Alerts | Home")
     const navigate = useNavigate();
     return (
         <>
@@ -21,13 +29,18 @@ function Hero({ className, ...props }) {
                 <div className="absolute inset-0 flex flex-col z-10">
                     {/* nav */}
                     <header className="relative mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-4">
-                        <div className="flex items-center gap-2">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                                <ShieldCheck className="h-5 w-5" strokeWidth={2.25} />
+                        <div className="flex items-center gap-3">
+                            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-white text-sidebar-primary-foreground">
+                                <img
+                                    src="/favicon/favicon-96x96.png"
+                                    alt="NwSSU Alert"
+                                    className="size-6 object-contain"
+                                />
                             </div>
-                            <span className="text-lg font-semibold tracking-tight">
-                                Sentinel<span className="text-destructive">.</span>EDM
-                            </span>
+                            <div className="grid flex-1 text-left text-sm leading-tight">
+                                <span className="truncate font-semibold">NwSSU Alert</span>
+                                <span className="truncate text-xs text-muted-foreground">Emergency Alert System</span>
+                            </div>
                         </div>
                         <nav className="hidden items-center gap-8 text-sm text-muted-foreground md:flex">
                             <a href="#about" className="hover:text-foreground transition-colors">

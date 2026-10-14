@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
+import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,6 +36,7 @@ import {
     IdCardLanyard,
     UserRoundPen,
     Mail,
+    MailCheck,
     Phone,
     Lock,
     ShieldAlert,
@@ -44,8 +46,22 @@ import {
 import { Tiles } from "@/components/styles/background/tiles";
 import { verifySchema, registerSchema } from "@/schemas/recipientSchema";
 import { zodFieldValidator } from "@/lib/validators";
-import { verifyRecipient, registerRecipient } from "@/services/authService";
+import { verifyRecipient, registerRecipient, sendRecipientRegistrationCode, verifyRecipientRegistrationCode } from "@/services/authService";
 import { Separator } from "@/components/ui/separator";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import {
+    InputOTP,
+    InputOTPGroup,
+    InputOTPSeparator,
+    InputOTPSlot,
+} from "@/components/ui/input-otp";
 
 const MAX_ATTEMPTS = 3;
 
@@ -59,6 +75,8 @@ const RegistrationForm = ({ className, ...props }) => {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [verified, setVerified] = useState(false);
     const [failedAttempts, setFailedAttempts] = useState(0);
+    const [emailCode, setEmailCode] = useState("");
+    const [isOtpDialogOpen, setIsOtpDialogOpen] = useState(false);
 
     const form = useForm({
         defaultValues: {
@@ -96,7 +114,7 @@ const RegistrationForm = ({ className, ...props }) => {
                 });
                 return;
             }
-            await registerMutation.mutateAsync(result.data);
+            await sendEmailCodeMutation.mutateAsync(result.data.email.trim());
         },
     });
 
@@ -125,6 +143,7 @@ const RegistrationForm = ({ className, ...props }) => {
     const registerMutation = useMutation({
         mutationFn: registerRecipient,
         onSuccess: () => {
+            setIsOtpDialogOpen(false);
             toast.success("Registration successful. You may now log in.");
             navigate("/login");
         },
@@ -150,6 +169,28 @@ const RegistrationForm = ({ className, ...props }) => {
         },
     });
 
+    const sendEmailCodeMutation = useMutation({
+        mutationFn: sendRecipientRegistrationCode,
+        onSuccess: (data) => {
+            setEmailCode("");
+            setIsOtpDialogOpen(true);
+            toast.success(data.message || "Check your email for the verification code.");
+        },
+        onError: (err) => toast.error(err.response?.data?.message || "Unable to send the verification code."),
+    });
+
+    const verifyEmailCodeMutation = useMutation({
+        mutationFn: ({ email, code }) => verifyRecipientRegistrationCode(email, code),
+        onSuccess: (_, { email, code }) => {
+            registerMutation.mutate({
+                ...form.state.values,
+                email: email.trim(),
+                email_code: code,
+            });
+        },
+        onError: (err) => toast.error(err.response?.data?.message || "The verification code is invalid or expired."),
+    });
+
     const handleRequestAccess = () => {
         const values = form.state.values;
         navigate("/request-access", {
@@ -162,7 +203,8 @@ const RegistrationForm = ({ className, ...props }) => {
         });
     };
 
-    const isPending = verifyMutation.isPending || registerMutation.isPending;
+    const isPending = verifyMutation.isPending || registerMutation.isPending || sendEmailCodeMutation.isPending || verifyEmailCodeMutation.isPending;
+    const isOtpPending = registerMutation.isPending || sendEmailCodeMutation.isPending || verifyEmailCodeMutation.isPending;
 
     return (
         <div
@@ -418,8 +460,7 @@ const RegistrationForm = ({ className, ...props }) => {
                                                                 }
                                                                 onChange={(e) =>
                                                                     field.handleChange(
-                                                                        e.target
-                                                                            .value
+                                                                        e.target.value
                                                                     )
                                                                 }
                                                                 disabled={
@@ -481,10 +522,10 @@ const RegistrationForm = ({ className, ...props }) => {
                                                                     field.handleBlur
                                                                 }
                                                                 onChange={(e) =>
-                                                                    field.handleChange(
-                                                                        e.target
-                                                                            .value
-                                                                    )
+                                                                    (() => {
+                                                                        field.handleChange(e.target.value);
+                                                                        setEmailCode("");
+                                                                    })()
                                                                 }
                                                                 disabled={
                                                                     isPending
@@ -760,12 +801,16 @@ const RegistrationForm = ({ className, ...props }) => {
                                         <>
                                             <Spinner /> Verifying...
                                         </>
+                                    ) : sendEmailCodeMutation.isPending ? (
+                                        <>
+                                            <Spinner /> Sending verification code...
+                                        </>
                                     ) : registerMutation.isPending ? (
                                         <>
                                             <Spinner /> Registering...
                                         </>
                                     ) : verified ? (
-                                        "Complete Registration"
+                                        "Register"
                                     ) : (
                                         "Verify account"
                                     )}
@@ -789,6 +834,112 @@ const RegistrationForm = ({ className, ...props }) => {
                             </CardFooter>
                         </form>
                     </Card>
+                    <Dialog
+                        open={isOtpDialogOpen}
+                        onOpenChange={setIsOtpDialogOpen}
+                    >
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Verify your email</DialogTitle>
+                                <DialogDescription>
+                                    Enter the 6-digit code we sent to{" "}
+                                    <span className="font-medium text-foreground">
+                                        {form.getFieldValue("email")}
+                                    </span>{" "}
+                                    to finish creating your account.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <form
+                                className="space-y-5"
+                                onSubmit={(event) => {
+                                    event.preventDefault();
+                                    verifyEmailCodeMutation.mutate({
+                                        email: form
+                                            .getFieldValue("email")
+                                            .trim(),
+                                        code: emailCode,
+                                    });
+                                }}
+                            >
+                                <Field>
+                                    <FieldLabel htmlFor="registration-otp">
+                                        Verification code
+                                    </FieldLabel>
+                                    <div className="flex justify-center">
+                                        <InputOTP
+                                            id="registration-otp"
+                                            maxLength={6}
+                                            pattern={REGEXP_ONLY_DIGITS}
+                                            inputMode="numeric"
+                                            autoComplete="one-time-code"
+                                            value={emailCode}
+                                            onChange={setEmailCode}
+                                            disabled={isOtpPending}
+                                        >
+                                            <InputOTPGroup className="*:data-[slot=input-otp-slot]:h-12 *:data-[slot=input-otp-slot]:w-11 *:data-[slot=input-otp-slot]:text-xl">
+                                                <InputOTPSlot index={0} />
+                                                <InputOTPSlot index={1} />
+                                                <InputOTPSlot index={2} />
+                                            </InputOTPGroup>
+                                            <InputOTPSeparator className="mx-2 text-muted-foreground" />
+                                            <InputOTPGroup className="*:data-[slot=input-otp-slot]:h-12 *:data-[slot=input-otp-slot]:w-11 *:data-[slot=input-otp-slot]:text-xl">
+                                                <InputOTPSlot index={3} />
+                                                <InputOTPSlot index={4} />
+                                                <InputOTPSlot index={5} />
+                                            </InputOTPGroup>
+                                        </InputOTP>
+                                    </div>
+                                    <FieldDescription className="text-center">
+                                        The code expires in 10 minutes. Check
+                                        your spam folder if it is not in your
+                                        inbox.
+                                    </FieldDescription>
+                                </Field>
+                                <DialogFooter className="flex-col-reverse sm:flex-row">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        disabled={isOtpPending}
+                                        onClick={() =>
+                                            sendEmailCodeMutation.mutate(
+                                                form
+                                                    .getFieldValue("email")
+                                                    .trim()
+                                            )
+                                        }
+                                    >
+                                        {sendEmailCodeMutation.isPending ? (
+                                            <>
+                                                <Spinner /> Sending...
+                                            </>
+                                        ) : (
+                                            "Resend code"
+                                        )}
+                                    </Button>
+                                    <Button
+                                        type="submit"
+                                        disabled={
+                                            isOtpPending || emailCode.length !== 6
+                                        }
+                                    >
+                                        {verifyEmailCodeMutation.isPending ? (
+                                            <>
+                                                <Spinner /> Verifying...
+                                            </>
+                                        ) : registerMutation.isPending ? (
+                                            <>
+                                                <Spinner /> Creating account...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <MailCheck /> Verify and register
+                                            </>
+                                        )}
+                                    </Button>
+                                </DialogFooter>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
                 </div>
             </div>
         </div>

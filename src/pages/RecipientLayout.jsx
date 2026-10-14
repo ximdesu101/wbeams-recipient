@@ -83,19 +83,17 @@ export default function RecipientLayout() {
         <div className="flex min-h-svh flex-col bg-background">
             <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
                 <div className="relative mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-                    <Link
-                        to="/dashboard"
-                        className="relative z-10 flex shrink-0 items-center gap-2 font-semibold tracking-tight"
-                    >
-                        <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                            <Shield className="size-4" />
-                        </span>
-                        <span className="hidden sm:inline">
-                            NwSSU{" "}
-                            <span className="text-destructive">WBEAMS</span>
-                        </span>
-                    </Link>
-
+                    <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-white text-sidebar-primary-foreground">
+                        <img                                                                                                                   
+                            src="/favicon/favicon-96x96.png"                                                                                   
+                            alt="NwSSU Alert"                                                                                                  
+                            className="size-6 object-contain"                                                                                  
+                        />                                                                                                                     
+                    </div>                                                                                                                     
+                    <div className="grid flex-1 text-left text-sm leading-tight">                                                              
+                        <span className="truncate font-semibold">NwSSU Alert</span>                                                            
+                        <span className="truncate text-xs text-muted-foreground">Emergency Alert System</span>                                 
+                    </div>                                                                                                                     
                     <nav className="pointer-events-none absolute inset-x-0 top-0 flex h-14 items-center justify-center">
                         <div className="pointer-events-auto flex items-center gap-1 overflow-x-auto">
                             {navItems.map(({ to, label, icon: Icon }) => (

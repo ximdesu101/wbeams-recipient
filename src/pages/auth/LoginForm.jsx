@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
+import useDocumentTitle from "@/hooks/useDocumentTitle";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
@@ -38,6 +39,7 @@ import { RecipientLogin } from "@/services/authService";
 import ForgotPassword from "./ForgotPassword";
 
 const LoginForm = ({ className, ...props }) => {
+    useDocumentTitle("NwSSU Alerts | Login");
     const navigate = useNavigate();
     const [showPassword, setShowPassword] = useState(false);
 
@@ -233,7 +235,7 @@ const LoginForm = ({ className, ...props }) => {
                                 <img
                                     src={LoginImage}
                                     alt="Image"
-                                    className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+                                    className="absolute inset-0 h-full w-full object-cover"
                                 />
                             </div>
                         </CardContent>

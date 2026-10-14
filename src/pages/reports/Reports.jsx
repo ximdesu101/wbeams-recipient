@@ -1,8 +1,10 @@
+import useDocumentTitle from "@/hooks/useDocumentTitle";
 import EmergencySOS from "./layout/EmergencySOS";
 import SendReport from "./layout/SendReports";
 import MyReports from "./layout/MyReports";
 
 const Reports = () => {
+    useDocumentTitle("NwSSU Alerts | Reports")
     return (
         <div className="flex min-w-0 flex-1 flex-col gap-4">
             <EmergencySOS/>

@@ -1,4 +1,4 @@
-import { CircleCheckBig } from "lucide-react";
+import { CircleCheckBig, CircleCheck } from "lucide-react";
 import {
     Card,
     CardAction,
@@ -15,18 +15,26 @@ const AlertCard = ({ alert, onAcknowledge, isAcknowledging }) => {
         ? `${alert.operator.first_name} ${alert.operator.last_name}`
         : "Unknown";
     const refNumber = `OPR-${String(alert.operator?.id ?? 0).padStart(5, "0")}`;
+    const severityCardClass = {
+        low: "border-green-100 bg-green-500 dark:bg-green-500/100 alert-glow-green",
+        medium: "border-yellow-100 bg-yellow-500 dark:bg-yellow-500/100 alert-glow-yellow",
+        moderate: "border-yellow-100 bg-yellow-500 dark:bg-yellow-500/100 alert-glow-yellow",
+        high: "border-orange-100 bg-orange-500 dark:bg-orange-500/100 alert-glow-orange",
+        critical: "border-red-100 bg-red-500 dark:bg-red-500/100 alert-glow-red",
+    }[alert.severity?.toLowerCase()] ?? "";
 
     return (
-        <Card>
-            <CardHeader className="flex flex-row items-start justify-between">
-                <div className="min-w-0">
-                    <CardTitle>{alert.title}</CardTitle>
-                    <CardDescription>{alert.message}</CardDescription>
+        <Card className={severityCardClass}>
+            <CardHeader>
+                <div className="flex justify-between">
+                    <CardTitle className="text-2xl">{alert.title}</CardTitle>
+                    <CardDescription className="text-white my-auto">
+                        {timeAgo(alert.sent_at)}          
+                    </CardDescription>                    
                 </div>
-
-                <CardDescription className="shrink-0">
-                    {timeAgo(alert.sent_at)}
-                </CardDescription>
+                <CardDescription className="text-white">
+                    {alert.message}                                   
+                </CardDescription>                                    
             </CardHeader>
 
             {alert.response_instructions?.length > 0 && (
@@ -49,7 +57,8 @@ const AlertCard = ({ alert, onAcknowledge, isAcknowledging }) => {
             )}
 
             <CardAction className="flex w-full justify-center items-center">
-                <Button onClick={onAcknowledge} disabled={isAcknowledging}>
+                <Button onClick={onAcknowledge} disabled={isAcknowledging} >
+                    <CircleCheck />
                     {isAcknowledging ? "Acknowledging..." : "Acknowledge"}
                 </Button>
             </CardAction>

@@ -5,6 +5,37 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@keyframes alert-card-glow {
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 var(--alert-glow-color);
+    }
+    50% {
+        box-shadow: 0 0 18px 4px var(--alert-glow-color);
+    }
+}
+
+.alert-glow-green,
+.alert-glow-yellow,
+.alert-glow-orange,
+.alert-glow-red {
+    animation: alert-card-glow 2.4s ease-in-out infinite;
+}
+
+.alert-glow-green { --alert-glow-color: rgb(34 197 94 / 55%); }
+.alert-glow-yellow { --alert-glow-color: rgb(234 179 8 / 60%); }
+.alert-glow-orange { --alert-glow-color: rgb(249 115 22 / 60%); }
+.alert-glow-red { --alert-glow-color: rgb(239 68 68 / 65%); }
+
+@media (prefers-reduced-motion: reduce) {
+    .alert-glow-green,
+    .alert-glow-yellow,
+    .alert-glow-orange,
+    .alert-glow-red {
+        animation: none;
+    }
+}
+
 @theme inline {
     --font-heading: var(--font-sans);
     --font-sans: 'Geist Variable', sans-serif;
