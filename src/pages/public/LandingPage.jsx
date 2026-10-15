@@ -38,7 +38,7 @@ function Hero({ className, ...props }) {
                                 />
                             </div>
                             <div className="grid flex-1 text-left text-sm leading-tight">
-                                <span className="truncate font-semibold">NwSSU Alert</span>
+                                <span className="truncate font-semibold">NwSSU Alerts</span>
                                 <span className="truncate text-xs text-muted-foreground">Emergency Alert System</span>
                             </div>
                         </div>
