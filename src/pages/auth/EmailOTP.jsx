@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from "@/components/ui/input-otp";
 import { Tiles } from "@/components/styles/background/tiles";
-import { sendRecipientRegistrationnCode, verifyRecipientRegistrationCode } from "@/services/authService";
+import { sendRecipientRegistrationCode, verifyRecipientRegistrationCode } from "@/services/authService";
 import { toast } from "sonner";
 
 const InputOTPForm = ({ className, ...props }) => {
